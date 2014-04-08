@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # gentoo verified docker deployment
 # (c) 2014 Daniel Golle
+#
+# requirements: wget, GnuPG, OpenSSL, docker.io ;)
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -90,14 +93,14 @@ getstage3() {
 	done || true
 
 	# extracting SHA512 and WHIRLPOOL sums from signed part
-	local sha512sum1="$( \
+	local sha512sum1=$( \
 		grep -A 1 SHA512 "$checkedfile" | \
 		grep -v "#" | grep -v "CONTENTS" | grep -v "\-\-" | sed 's/ .*//' \
-	)"
-	local whirlpoolsum1="$( \
+	)
+	local whirlpoolsum1=$( \
 		grep -A 1 WHIRLPOOL "$checkedfile" | \
 		grep -v "#" | grep -v "CONTENTS" | grep -v "\-\-" | sed 's/ .*//' \
-	)"
+	)
 	rm "$checkedfile"
 
 	# alright, now download stage3 tarball
@@ -106,19 +109,19 @@ getstage3() {
 	local checksumsok=0
 
 	# verifying checksums
-	local sha512sum2="$( \
+	local sha512sum2=$( \
 		openssl dgst -r -sha512 "${target}/${stage3name}" | \
 		sed 's/ .*//' \
-	)"
+	)
 	if [ "$sha512sum1" = "$sha512sum2" ]; then
 		echo "sha512 ok" 1>&2
 		checksumsok=$(( $checksumsok + 1 ))
 	fi
 
-	local whirlpoolsum2="$( \
+	local whirlpoolsum2=$( \
 		openssl dgst -r -whirlpool "${target}/${stage3name}" | \
 		sed 's/ .*//' \
-	)"
+	)
 	if [ "$whirlpoolsum1" = "$whirlpoolsum2" ]; then
 		echo "whirlpool ok" 1>&2
 		checksumsok=$(( $checksumsok + 1 ))
