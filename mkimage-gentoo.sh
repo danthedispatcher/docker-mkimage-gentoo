@@ -60,7 +60,7 @@ getstage3() {
 	wget -c -q -O"$digestfile" "${snapshotdirurl}/${stage3name}.DIGESTS.asc"
 	if [ ! -e "$digestfile" ]; then
 		echo "can't download checksum file" 1>&2
-		exit 1
+		return
 	fi
 
 	# PGP signature check of checksum file
@@ -78,7 +78,7 @@ getstage3() {
 		rm "$digestfile"
 		rm "$pgpsession"/*
 		rmdir "$pgpsession"
-		exit 1
+		return
 	fi
 	rm "$pgpsession"/*
 	rmdir "$pgpsession"
@@ -138,7 +138,7 @@ getstage3() {
 	if [ "$checksumsok" != "2" ]; then
 		echo "checksums failed!" 1>&2
 		rm "${target}/${stage3name}"
-		exit 1
+		return
 	fi
 
 	echo "${stage3name}"
