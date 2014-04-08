@@ -67,11 +67,22 @@ getstage3() {
 	# start with empty pgp homedir
 	local pgpsession="$( mktemp -d )"
 	# import Gentoo Linux Release Engineering (Automated Weekly Release Key)
-	gpg -q --homedir "$pgpsession" --keyserver $PGPKEYSERVER --recv-keys $PGPPUBKEYFINGERPRINT
+	if ! gpg -q --homedir "$pgpsession" --keyserver $PGPKEYSERVER --recv-keys $PGPPUBKEYFINGERPRINT; then
+		echo "cannot import public key from keyserver"
+		rm "$digestfile"
+		rm "$pgpsession"/*
+		rmdir "$pgpsession"
+		return
+	fi
 	# set owner-trust for this RSA public key
-	echo "$PGPPUBKEYFINGERPRINT:6:" |
-		gpg -q --homedir "$pgpsession" --import-ownertrust
-	gpg -q --homedir "$pgpsession" --update-trustdb
+	if ! echo "$PGPPUBKEYFINGERPRINT:6:" |
+		gpg -q --homedir "$pgpsession" --import-ownertrust; then
+		echo "cannot set ownertrust for key"
+		rm "$digestfile"
+		rm "$pgpsession"/*
+		rmdir "$pgpsession"
+		return
+	fi
 	# verify signature
 	if ! gpg -q --homedir "$pgpsession" --verify "$digestfile"; then
 		echo "signature verification of checksum file failed" 1>&2
