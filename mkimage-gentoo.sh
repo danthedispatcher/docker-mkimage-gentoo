@@ -172,5 +172,7 @@ vertag="${tag}:${version}"
 echo "importing ${stage3}" 1>&2
 dockerimage=$( bzip2 -cd "${target}/${stage3}" | docker import - $vertag )
 
-docker tag "$dockerimage" danthedispatcher/$vertag
-docker tag "$dockerimage" danthedispatcher/${tag}:latest
+docker tag "$dockerimage" $NAMESPACE/$vertag
+docker tag "$dockerimage" $NAMESPACE/${tag}:latest
+
+# docker push $NAMESPACE/$vertag
