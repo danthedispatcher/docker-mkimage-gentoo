@@ -18,7 +18,6 @@
 
 NAMESPACE=danthedispatcher
 PGPKEYSERVER=pgp.mit.edu
-PGPPUBKEYID=2D182910
 PGPPUBKEYFINGERPRINT=13EBBDBEDE7A12775DFDB1BABB572E0E2D182910
 
 set -e
@@ -68,7 +67,7 @@ getstage3() {
 	# start with empty pgp homedir
 	local pgpsession="$( mktemp -d )"
 	# import Gentoo Linux Release Engineering (Automated Weekly Release Key)
-	gpg -q --homedir "$pgpsession" --keyserver $PGPKEYSERVER --recv-keys $PGPPUBKEYID
+	gpg -q --homedir "$pgpsession" --keyserver $PGPKEYSERVER --recv-keys $PGPPUBKEYFINGERPRINT
 	# set owner-trust for this RSA public key
 	echo "$PGPPUBKEYFINGERPRINT:6:" |
 		gpg -q --homedir "$pgpsession" --import-ownertrust
@@ -165,14 +164,23 @@ if [ ! "$version" ]; then
 	exit 1;
 fi
 
+tag=$( echo $tag | sed "s/\+/-/" )
+vertag="${tag}:${version}"
+
+# check for existing docker image tagged with current build version
+docker images $NAMESPACE/$tag | while read _repo extag _id _rest; do
+	if [ "$extag" = "$version" ]; then
+		echo "$NAMESPACE/$vertag exists, not rebuilding"
+		exit 1
+	fi
+done
+
 stage3=$( getstage3 "$mirror" "$arch" "$version" "$target" "$flavor" )
 if [ ! "$stage3" -o ! -e "${target}/${stage3}" ]; then
 	echo "no stage3" 1>&2
 	exit 1;
 fi
 
-tag=$( echo $tag | sed "s/\+/-/" )
-vertag="${tag}:${version}"
 
 echo "importing ${stage3}" 1>&2
 dockerimage=$( bzip2 -cd "${target}/${stage3}" | docker import - $vertag )
