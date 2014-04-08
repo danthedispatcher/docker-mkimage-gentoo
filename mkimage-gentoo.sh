@@ -73,7 +73,7 @@ getstage3() {
 
 	# PGP signature check of checksum file
 	# start with empty pgp homedir
-	local pgpsession="$( mktemp -d )"
+	local pgpsession="$( mktemp -d mkimage-gentoo.pgp.XXXXXXXXXX )"
 	if [ ! "$pgpsession" -o ! -d "$pgpsession" -o ! -w "$pgpsession" ]; then
 		echo "gpg: can't create session" 1>&2
 		rm "$digestfile"
@@ -206,7 +206,7 @@ docker images $NAMESPACE/$tag | while read _repo extag _id _rest; do
 	fi
 done
 
-target="$( mktemp -d )"
+target="$( mktemp -d mkimage-gentoo.target.XXXXXXXXXX )"
 if [ ! -d "$target" ]; then
 	echo "cannot mktemp -d" 1>&2
 	exit 1;
