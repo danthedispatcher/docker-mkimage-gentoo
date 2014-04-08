@@ -3,6 +3,17 @@ docker-mkimage-gentoo
 
 a safe and flexible gentoo stage3 importer for docker.io
 
+ * verifies checksum signature and makes sure it's actually signed by
+
+   > RSA key ID 2D182910
+
+   > "Gentoo Linux Release Engineering (Automated Weekly Release Key) <releng@gentoo.org>"
+
+ * checks both, SHA-512 and Whirlpool digests
+
+ * allows building from all different stage3 flavors {,nomultilib,hardened,hardened+nomultilib}
+
+
 Usage
 -----
 
