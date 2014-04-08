@@ -36,4 +36,4 @@ creates images from current amd64 stage3 nomultilib snapshot
 uses http://distfiles.gentoo.org/ as mirror
 
 Note that the resulting docker.io images are not ready for use, but rather
-serve as a base gentoo-based Dockerfiles.
+serve as root images for gentoo-based Dockerfiles.
