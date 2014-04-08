@@ -22,6 +22,16 @@ PGPPUBKEYFINGERPRINT=13EBBDBEDE7A12775DFDB1BABB572E0E2D182910
 
 set -e
 
+for checkme in docker wget gpg openssl; do
+	req="$(which $checkme)"
+	if [ ! "$req" ]; then
+		echo "no $checkme" 1>&2
+		exit 1
+	else
+		echo "using $req" 1>&2
+	fi
+done
+
 buildsdirurl() {
 	local mirror="$1"
 	local arch="$2"
@@ -59,7 +69,7 @@ getstage3() {
 	# download DIGEST file
 	wget -c -q -O"$digestfile" "${snapshotdirurl}/${stage3name}.DIGESTS.asc"
 	if [ ! -e "$digestfile" ]; then
-		echo "can't download checksum file" 1>&2
+		echo "wget: can't download checksum file" 1>&2
 		return
 	fi
 
@@ -67,8 +77,9 @@ getstage3() {
 	# start with empty pgp homedir
 	local pgpsession="$( mktemp -d )"
 	# import Gentoo Linux Release Engineering (Automated Weekly Release Key)
-	if ! gpg -q --homedir "$pgpsession" --keyserver $PGPKEYSERVER --recv-keys $PGPPUBKEYFINGERPRINT; then
-		echo "cannot import public key from keyserver"
+	if ! gpg -q --homedir "$pgpsession" --keyserver $PGPKEYSERVER \
+		--recv-keys $PGPPUBKEYFINGERPRINT; then
+		echo "gpg: cannot import public key from keyserver" 1>&2
 		rm "$digestfile"
 		rm "$pgpsession"/*
 		rmdir "$pgpsession"
@@ -77,7 +88,7 @@ getstage3() {
 	# set owner-trust for this RSA public key
 	if ! echo "$PGPPUBKEYFINGERPRINT:6:" |
 		gpg -q --homedir "$pgpsession" --import-ownertrust; then
-		echo "cannot set ownertrust for key"
+		echo "gpg: cannot set ownertrust for key" 1>&2
 		rm "$digestfile"
 		rm "$pgpsession"/*
 		rmdir "$pgpsession"
@@ -85,7 +96,7 @@ getstage3() {
 	fi
 	# verify signature
 	if ! gpg -q --homedir "$pgpsession" --verify "$digestfile"; then
-		echo "signature verification of checksum file failed" 1>&2
+		echo "gpg: signature verification of checksum file failed!" 1>&2
 		rm "$digestfile"
 		rm "$pgpsession"/*
 		rmdir "$pgpsession"
@@ -122,18 +133,24 @@ getstage3() {
 	)
 	rm "$checkedfile"
 
+	if [ ! "$sha512sum1" -o ! "$whirlpoolsum1" -o \
+	     ! "${#sha512sum1}" = "128" -o ! "${#whirlpoolsum1}" = "128" ]; then
+		echo "error: cannot parse digest file" 1>&2
+		return
+	fi
 	# alright, now download stage3 tarball
+	echo "wget: downloading $stage3name" 1>&2
 	wget -q -c -O"${target}/${stage3name}" "${snapshotdirurl}/${stage3name}"
 
-	local checksumsok=0
-
 	# verifying checksums
+	echo "openssl: verifying digest" 1>&2
+	local checksumsok=0
 	local sha512sum2=$( \
 		openssl dgst -r -sha512 "${target}/${stage3name}" | \
 		sed 's/ .*//' \
 	)
 	if [ "$sha512sum1" = "$sha512sum2" ]; then
-		echo "sha512 ok" 1>&2
+		echo "openssl: sha512 ok" 1>&2
 		checksumsok=$(( $checksumsok + 1 ))
 	fi
 
@@ -142,12 +159,12 @@ getstage3() {
 		sed 's/ .*//' \
 	)
 	if [ "$whirlpoolsum1" = "$whirlpoolsum2" ]; then
-		echo "whirlpool ok" 1>&2
+		echo "openssl: whirlpool ok" 1>&2
 		checksumsok=$(( $checksumsok + 1 ))
 	fi
 
 	if [ "$checksumsok" != "2" ]; then
-		echo "checksums failed!" 1>&2
+		echo "openssl: checksums failed!" 1>&2
 		rm "${target}/${stage3name}"
 		return
 	fi
