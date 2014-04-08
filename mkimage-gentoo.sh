@@ -144,7 +144,7 @@ arch="amd64"
 
 target="$( mktemp -d )"
 
-tag="gentoo-stage3${flavor:+"-"}${flavor}"
+tag="gentoo${flavor:+"-"}${flavor}"
 
 version=$( getversion "$mirror" "$arch" "$flavor" )
 if [ ! "$version" ]; then
