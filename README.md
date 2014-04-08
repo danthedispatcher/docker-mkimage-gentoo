@@ -3,6 +3,10 @@ docker-mkimage-gentoo
 
 a safe and flexible gentoo stage3 importer for docker.io
 
+ * allows building from all different stage3 flavors {,nomultilib,hardened,hardened+nomultilib}
+
+ * automatically uses latest build and tags resulting docker image
+
  * verifies checksum signature and makes sure it's actually signed by
 
    > RSA key ID 2D182910
@@ -11,7 +15,6 @@ a safe and flexible gentoo stage3 importer for docker.io
 
  * checks both, SHA-512 and Whirlpool digests
 
- * allows building from all different stage3 flavors {,nomultilib,hardened,hardened+nomultilib}
 
 
 Usage
