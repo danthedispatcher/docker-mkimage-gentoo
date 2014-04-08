@@ -87,7 +87,7 @@ getstage3() {
 	local copy=0
 	local skip=0
 	local checkedfile="${target}/${stage3name}.DIGESTS.checked"
-	cat "${target}/${stage3name}.DIGESTS.asc" | while read line; do
+	cat "$digestfile" | while read line; do
 		case "$line" in
 			"-----BEGIN PGP SIGNED MESSAGE"*)
 				copy=1
@@ -98,6 +98,7 @@ getstage3() {
 		esac
 		[ "$copy" = "1" -a "$skip" = "0" ] && echo "$line" >> "$checkedfile"
 	done || true
+	rm "$digestfile"
 
 	# extracting SHA512 and WHIRLPOOL sums from signed part
 	local sha512sum1=$( \
@@ -154,8 +155,6 @@ mirror="${1:-"http://mirror.ovh.net/gentoo-distfiles"}"
 # Docker is amd64 only
 arch="amd64"
 
-target="$( mktemp -d )"
-
 tag="gentoo${flavor:+"-"}${flavor}"
 
 version=$( getversion "$mirror" "$arch" "$flavor" )
@@ -170,20 +169,29 @@ vertag="${tag}:${version}"
 # check for existing docker image tagged with current build version
 docker images $NAMESPACE/$tag | while read _repo extag _id _rest; do
 	if [ "$extag" = "$version" ]; then
-		echo "$NAMESPACE/$vertag exists, not rebuilding"
+		echo "$NAMESPACE/$vertag exists, not rebuilding" 1>&2
 		exit 1
 	fi
 done
 
-stage3=$( getstage3 "$mirror" "$arch" "$version" "$target" "$flavor" )
-if [ ! "$stage3" -o ! -e "${target}/${stage3}" ]; then
-	echo "no stage3" 1>&2
+target="$( mktemp -d )"
+if [ ! -d "$target" ]; then
+	echo "cannot mktemp -d" 1>&2
 	exit 1;
 fi
 
+stage3=$( getstage3 "$mirror" "$arch" "$version" "$target" "$flavor" )
+if [ ! "$stage3" -o ! -e "${target}/${stage3}" ]; then
+	echo "no stage3" 1>&2
+	rmdir "$target"
+	exit 1;
+fi
 
 echo "importing ${stage3}" 1>&2
 dockerimage=$( bzip2 -cd "${target}/${stage3}" | docker import - $vertag )
+
+rm "${target}/${stage3}"
+rmdir "$target"
 
 docker tag "$dockerimage" $NAMESPACE/$vertag
 docker tag "$dockerimage" $NAMESPACE/${tag}:latest
