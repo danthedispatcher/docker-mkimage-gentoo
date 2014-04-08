@@ -147,7 +147,7 @@ if echo $1 | grep -q "/"; then
 	flavor=""
 else
 	flavor="$1"
-	shift;
+	shift || true;
 fi
 mirror="${1:-"http://mirror.ovh.net/gentoo-distfiles"}"
 
