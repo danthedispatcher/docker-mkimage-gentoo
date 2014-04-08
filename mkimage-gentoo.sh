@@ -76,12 +76,17 @@ getstage3() {
 	# PGP signature check of checksum file
 	# start with empty pgp homedir
 	local pgpsession="$( mktemp -d )"
+	if [ ! "$pgpsession" -o ! -d "$pgpsession" -o ! -w "$pgpsession" ]; then
+		echo "gpg: can't create session" 1>&2
+		rm "$digestfile"
+		return
+	fi
 	# import Gentoo Linux Release Engineering (Automated Weekly Release Key)
 	if ! gpg -q --homedir "$pgpsession" --keyserver $PGPKEYSERVER \
 		--recv-keys $PGPPUBKEYFINGERPRINT; then
 		echo "gpg: cannot import public key from keyserver" 1>&2
 		rm "$digestfile"
-		rm "$pgpsession"/*
+		rm "$pgpsession"/* || true
 		rmdir "$pgpsession"
 		return
 	fi
@@ -138,6 +143,7 @@ getstage3() {
 		echo "error: cannot parse digest file" 1>&2
 		return
 	fi
+
 	# alright, now download stage3 tarball
 	echo "wget: downloading $stage3name" 1>&2
 	wget -q -c -O"${target}/${stage3name}" "${snapshotdirurl}/${stage3name}"
