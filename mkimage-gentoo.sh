@@ -144,8 +144,13 @@ getstage3() {
 	echo "${stage3name}"
 }
 
-flavor="$1"
-mirror="${2:-"http://mirror.ovh.net/gentoo-distfiles"}"
+if echo $1 | grep -q "/"; then
+	flavor=""
+else
+	flavor="$1"
+	shift;
+fi
+mirror="${1:-"http://mirror.ovh.net/gentoo-distfiles"}"
 
 # Docker is amd64 only
 arch="amd64"
