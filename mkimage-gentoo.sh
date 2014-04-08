@@ -27,8 +27,6 @@ for checkme in docker wget gpg openssl; do
 	if [ ! "$req" ]; then
 		echo "no $checkme" 1>&2
 		exit 1
-	else
-		echo "using $req" 1>&2
 	fi
 done
 
