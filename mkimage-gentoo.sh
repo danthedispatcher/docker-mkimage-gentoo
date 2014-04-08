@@ -16,6 +16,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+NAMESPACE=danthedispatcher
+PGPKEYSERVER=pgp.mit.edu
+PGPPUBKEYID=2D182910
+PGPPUBKEYFINGERPRINT=13EBBDBEDE7A12775DFDB1BABB572E0E2D182910
+
 set -e
 
 buildsdirurl() {
@@ -62,9 +67,12 @@ getstage3() {
 	# PGP signature check of checksum file
 	# start with empty pgp homedir
 	local pgpsession="$( mktemp -d )"
+	# import Gentoo Linux Release Engineering (Automated Weekly Release Key)
+	gpg -q --homedir "$pgpsession" --keyserver $PGPKEYSERVER --recv-keys $PGPPUBKEYID
+	# set owner-trust for this RSA public key
+	echo "$PGPPUBKEYFINGERPRINT:6:" |
+		gpg -q --homedir "$pgpsession" --import-ownertrust
 	gpg -q --homedir "$pgpsession" --update-trustdb
-	# import Gentoo Release public key
-	gpg -q --homedir "$pgpsession" --keyserver pgp.mit.edu --recv-keys 2D182910
 	# verify signature
 	if ! gpg -q --homedir "$pgpsession" --verify "$digestfile"; then
 		echo "signature verification of checksum file failed" 1>&2
